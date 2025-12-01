@@ -2,47 +2,48 @@ import config from "@colyseus/tools";
 import { monitor } from "@colyseus/monitor";
 import { playground } from "@colyseus/playground";
 import cors from "cors";
+import { Request, Response, NextFunction } from "express";
 
-/**
- * Import your Room files
- */
 import { MyRoom } from "./rooms/MyRoom";
 
 export default config({
+initializeGameServer: (gameServer) => {
+  const transport: any = gameServer.transport;
 
-    initializeGameServer: (gameServer) => {
-        /**
-         * Define your room handlers:
-         */
-        gameServer.define('my_room', MyRoom);
-    },
+  if (transport.app) {
+    transport.app.use((req: Request, res: Response, next: NextFunction) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-    initializeExpress: (app) => {
+      if (req.method === "OPTIONS") {
+        res.sendStatus(200);
+        return;
+      }
 
-        // ⭐️⭐️⭐️ ВАЖНО: Добавляем CORS для всех запросов ⭐️⭐️⭐️
-        app.use(cors({
-            origin: "*",          // можно указать домен: "https://remix.gg"
-            methods: ["GET", "POST", "OPTIONS"],
-            credentials: false
-        }));
+      next();
+    });
+  }
 
-        // или super-простой вариант:
-        // app.use(cors());
+  gameServer.define("my_room", MyRoom);
+},
 
-        app.get("/hello_world", (req, res) => {
-            res.send("It's time to kick ass and chew bubblegum!");
-        });
+  initializeExpress: (app) => {
+    // это для твоих кастомных роутов (/hello_world, /monitor, playground)
+    app.use(cors());
 
-        if (process.env.NODE_ENV !== "production") {
-            app.use("/", playground());
-        }
+    app.get("/hello_world", (req, res) => {
+      res.send("It's time to kick ass and chew bubblegum!");
+    });
 
-        app.use("/monitor", monitor());
-    },
-
-    beforeListen: () => {
-        /**
-         * Before before gameServer.listen() is called.
-         */
+    if (process.env.NODE_ENV !== "production") {
+      app.use("/", playground());
     }
+
+    app.use("/monitor", monitor());
+  },
+
+  beforeListen: () => {
+    // можно оставить пустым
+  }
 });
