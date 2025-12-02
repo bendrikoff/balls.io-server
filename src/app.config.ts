@@ -9,7 +9,6 @@ import { MyRoom } from "./rooms/MyRoom";
 export default config({
 initializeGameServer: (gameServer) => {
   const transport: any = gameServer.transport;
-
   if (transport.app) {
     transport.app.use((req: Request, res: Response, next: NextFunction) => {
       res.setHeader("Access-Control-Allow-Origin", "*");
